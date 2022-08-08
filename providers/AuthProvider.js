@@ -19,7 +19,7 @@ const AuthProvider = ({children}) => {
       return;
     }
 
-    const myProject = {name: 'My Project', partition: `project=${user.id}`};
+    const myProject = {name: 'My Project'};
     setProjectData([myProject]);
 
     // TODO: Open the user realm, which contains at most one user custom data object

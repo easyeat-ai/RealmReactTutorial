@@ -39,13 +39,12 @@ const App = () => {
           <Stack.Screen name="Task List">
             {props => {
               const {navigation, route} = props;
-              const {user, projectPartition} = route.params;
+              const {user} = route.params;
               return (
                 <TasksProvider
                   navigation={navigation}
                   route={route}
-                  user={user}
-                  projectPartition={projectPartition}>
+                  user={user}>
                   <TasksView navigation={navigation} route={route} />
                 </TasksProvider>
               );
@@ -55,13 +54,12 @@ const App = () => {
           <Stack.Screen name="SubTask List">
             {props => {
               const {navigation, route} = props;
-              const {user, projectPartition} = route.params;
+              const {user} = route.params;
               return (
                 <TasksProvider
                   navigation={navigation}
                   route={route}
-                  user={user}
-                  projectPartition={projectPartition}>
+                  user={user}>
                   <SubTaskView navigation={navigation} route={route} />
                 </TasksProvider>
               );

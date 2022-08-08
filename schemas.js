@@ -10,13 +10,11 @@ class Task {
    */
   constructor({
     name,
-    partition,
     status = Task.STATUS_OPEN,
     id = new ObjectId(),
     subTask,
     counter,
   }) {
-    this._partition = partition;
     this._id = id;
     this.name = name;
     this.status = status;

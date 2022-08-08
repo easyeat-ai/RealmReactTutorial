@@ -11,7 +11,7 @@ import {EditSubTask} from '../components/EditSubTask';
 
 const TasksContext = React.createContext(null);
 
-const TasksProvider = ({navigation, route, children, projectPartition}) => {
+const TasksProvider = ({navigation, children}) => {
   const [tasks, setTasks] = useState([]);
   const [updatedTask, setUpdatedTask] = useState();
   const [subTaskIndexToUpdate, setSubTaskIndexToUpdate] = useState();
@@ -39,7 +39,12 @@ const TasksProvider = ({navigation, route, children, projectPartition}) => {
       schemaVersion: 3,
       sync: {
         user: user,
-        partitionValue: projectPartition,
+        flexible: true,
+        initialSubscriptions: {
+          update: (subs, realm) => {
+            subs.add(realm.objects(Task.schema.name).filtered('counter >= 1'));
+          },
+        },
         newRealmFileBehavior: OpenRealmBehaviorConfiguration,
         existingRealmFileBehavior: OpenRealmBehaviorConfiguration,
       },
@@ -49,7 +54,8 @@ const TasksProvider = ({navigation, route, children, projectPartition}) => {
     Realm.open(config).then(projectRealm => {
       realmRef.current = projectRealm;
       const syncTasks = projectRealm.objects('Task');
-      let sortedTasks = syncTasks.sorted('name');
+      const longRunningTasks = syncTasks.filtered('counter >= 1');
+      let sortedTasks = longRunningTasks.sorted('name');
       setTasks([...sortedTasks]);
       sortedTasks.forEach(task => {
         console.log('id : ', task._id);
@@ -75,6 +81,12 @@ const TasksProvider = ({navigation, route, children, projectPartition}) => {
       // sortedTasks.addListener(() => {
       //   setTasks([...sortedTasks]);
       // });
+
+      // Check subscription state
+      // console.log(
+      //   projectRealm.subscriptions.state,
+      //   'projectRealm.subscriptions.state',
+      // ); // log the subscription state
     });
 
     // TODO: Open the project realm with the given configuration and store
@@ -94,22 +106,23 @@ const TasksProvider = ({navigation, route, children, projectPartition}) => {
         setTasks([]);
       }
     };
-  }, [user, projectPartition]);
+  }, [user]);
 
   const createTask = newTaskName => {
     const projectRealm = realmRef.current;
-    projectRealm.write(() => {
-      // Create a new task in the same partition -- that is, in the same project.
-      projectRealm.create(
-        'Task',
-        new Task({
-          name: newTaskName || 'New Task',
-          partition: projectPartition,
-          // subTask: [`   ${newTaskName} subTask1`, `   ${newTaskName} subTask2`],
-          counter: 1,
-        }),
-      );
-    });
+    if (projectRealm) {
+      projectRealm.write(() => {
+        // Create a new task -- that is, in the same project.
+        projectRealm.create(
+          'Task',
+          new Task({
+            name: newTaskName || 'New Task',
+            // subTask: [`   ${newTaskName} subTask1`, `   ${newTaskName} subTask2`],
+            counter: 1,
+          }),
+        );
+      });
+    }
   };
 
   const setTaskStatus = (task, status) => {
@@ -163,7 +176,6 @@ const TasksProvider = ({navigation, route, children, projectPartition}) => {
   const viewSubTask = task => {
     navigation.navigate('SubTask List', {
       taskObj: task,
-      projectPartition: projectPartition,
     });
   };
 
