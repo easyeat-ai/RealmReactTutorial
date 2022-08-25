@@ -1,7 +1,7 @@
 import React, {useContext, useState, useEffect, useRef} from 'react';
 import 'react-native-get-random-values';
 import Realm, {schemaVersion} from 'realm';
-import {Task} from '../schemas';
+import {SubTaskRef, Task} from '../schemas';
 import {useAuth} from './AuthProvider';
 import {ObjectId} from 'bson';
 import {EditTask} from '../components/EditTask';
@@ -34,61 +34,47 @@ const TasksProvider = ({navigation, children}) => {
     const OpenRealmBehaviorConfiguration = {
       type: 'openImmediately',
     };
-    const config = {
-      schema: [Task.schema],
-      schemaVersion: 3,
-      sync: {
-        user: user,
-        flexible: true,
-        initialSubscriptions: {
-          update: (subs, realm) => {
-            subs.add(realm.objects(Task.schema.name).filtered('counter >= 1'));
+    try {
+      const config = {
+        schema: [Task, SubTaskRef],
+        schemaVersion: 13,
+        sync: {
+          user: user,
+          flexible: true,
+          initialSubscriptions: {
+            update: (subs, realm) => {
+              subs.add(realm.objects(Task.name).filtered('counter >= 1'));
+            },
           },
+          newRealmFileBehavior: OpenRealmBehaviorConfiguration,
+          existingRealmFileBehavior: OpenRealmBehaviorConfiguration,
         },
-        newRealmFileBehavior: OpenRealmBehaviorConfiguration,
-        existingRealmFileBehavior: OpenRealmBehaviorConfiguration,
-      },
-    };
+      };
 
-    // open a realm for this particular project
-    Realm.open(config).then(projectRealm => {
-      realmRef.current = projectRealm;
-      const syncTasks = projectRealm.objects('Task');
-      const longRunningTasks = syncTasks.filtered('counter >= 1');
-      let sortedTasks = longRunningTasks.sorted('name');
-      setTasks([...sortedTasks]);
-      sortedTasks.forEach(task => {
-        console.log('id : ', task._id);
-        console.log('name :', task.name);
-        console.log('status :', task.status);
-        console.log('subtasks :', task.subTask);
-        console.log('*****************');
-      });
+      // open a realm for this particular project
 
-      //  Realm.App.Sync.setLogLevel(user, 'debug');
-
-      sortedTasks.addListener(() => {
+      Realm.open(config).then(projectRealm => {
+        console.log('project realm ', projectRealm);
+        realmRef.current = projectRealm;
+        const syncTasks = projectRealm.objects('Task');
+        const longRunningTasks = syncTasks.filtered('counter >= 1');
+        let sortedTasks = longRunningTasks.sorted('name');
+        console.log('sorted task count', sortedTasks.length);
         setTasks([...sortedTasks]);
+        longRunningTasks.forEach(task => {
+          console.log('id : ', task._id);
+          console.log('name :', task.name);
+          console.log('status :', task.status);
+          console.log('subtasks :', task.subTask);
+          console.log('*****************');
+        });
+        sortedTasks.addListener(() => {
+          setTasks([...sortedTasks]);
+        });
       });
-
-      // sortedTasks.addListener((tasks, changes) => {
-      //   // console.log('inside listener tasks', tasks);
-      //   // console.log('inside listener changes', changes);
-      //   setTasks([...sortedTasks]);
-      // });
-
-      // //correct code
-      // sortedTasks.addListener(() => {
-      //   setTasks([...sortedTasks]);
-      // });
-
-      // Check subscription state
-      // console.log(
-      //   projectRealm.subscriptions.state,
-      //   'projectRealm.subscriptions.state',
-      // ); // log the subscription state
-    });
-
+    } catch (error) {
+      console.log('realm opening error', error);
+    }
     // TODO: Open the project realm with the given configuration and store
     // it in the realmRef. Once opened, fetch the Task objects in the realm,
     // sorted by name, and attach a listener to the Task collection. When the
@@ -111,18 +97,37 @@ const TasksProvider = ({navigation, children}) => {
   const createTask = newTaskName => {
     const projectRealm = realmRef.current;
     if (projectRealm) {
+      const subTaskRefObj = {
+        _id: new ObjectId(),
+        name: 'Shubham',
+        subcounter: 'yup',
+      };
       projectRealm.write(() => {
-        // Create a new task -- that is, in the same project.
-        projectRealm.create(
-          'Task',
-          new Task({
-            name: newTaskName || 'New Task',
-            // subTask: [`   ${newTaskName} subTask1`, `   ${newTaskName} subTask2`],
-            counter: 1,
-          }),
-        );
+        // create a contact object
+        projectRealm.create('Task', {
+          _id: new ObjectId(),
+          name: newTaskName || 'New Task',
+          status: 'Open',
+          counter: 1,
+          subTaskRef: [subTaskRefObj], // embed the address in the contact object
+        });
       });
     }
+
+    // const projectRealm = realmRef.current;
+    // if (projectRealm) {
+    //   projectRealm.write(() => {
+    //     // Create a new task -- that is, in the same project.
+    //     projectRealm.create(
+    //       'Task',
+    //       new Task({
+    //         name: newTaskName || 'New Task',
+    //         // subTask: [`   ${newTaskName} subTask1`, `   ${newTaskName} subTask2`],
+    //         counter: 1,
+    //       }),
+    //     );
+    //   });
+    // }
   };
 
   const setTaskStatus = (task, status) => {
