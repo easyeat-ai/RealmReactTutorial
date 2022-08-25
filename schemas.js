@@ -11,6 +11,16 @@ const SubTaskRef = {
   },
 };
 
+const Address = {
+  name: 'Address',
+  embedded: true,
+  properties: {
+    country: 'string',
+    district: 'string',
+    pincode: 'string',
+  },
+};
+
 const Task = {
   name: 'Task',
   properties: {
@@ -19,7 +29,9 @@ const Task = {
     status: 'string',
     subTask: 'string[]',
     counter: 'int',
+    city: 'string',
     subTaskRef: {type: 'list', objectType: 'SubTaskRef'},
+    address: 'Address',
   },
   primaryKey: '_id',
 };
@@ -73,4 +85,4 @@ const Task = {
 //     },
 //   };
 // }
-export {Task, SubTaskRef};
+export {Task, SubTaskRef, Address};

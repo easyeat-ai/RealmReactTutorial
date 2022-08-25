@@ -1,7 +1,7 @@
 import React, {useContext, useState, useEffect, useRef} from 'react';
 import 'react-native-get-random-values';
 import Realm, {schemaVersion} from 'realm';
-import {SubTaskRef, Task} from '../schemas';
+import {Address, SubTaskRef, Task} from '../schemas';
 import {useAuth} from './AuthProvider';
 import {ObjectId} from 'bson';
 import {EditTask} from '../components/EditTask';
@@ -36,14 +36,25 @@ const TasksProvider = ({navigation, children}) => {
     };
     try {
       const config = {
-        schema: [Task, SubTaskRef],
-        schemaVersion: 13,
+        schema: [Task, SubTaskRef, Address],
+        schemaVersion: 24,
+
         sync: {
           user: user,
+          clientReset: {
+            mode: 'discardLocal',
+            clientResetBefore: realm => {
+              console.log('Beginning client reset for ', realm.path);
+            },
+            clientResetAfter: (beforeRealm, afterRealm) => {
+              console.log('Finished client reset for', beforeRealm.path);
+              console.log('New realm path', afterRealm.path);
+            },
+          },
           flexible: true,
           initialSubscriptions: {
             update: (subs, realm) => {
-              subs.add(realm.objects(Task.name).filtered('counter >= 1'));
+              subs.add(realm.objects(Task.name));
             },
           },
           newRealmFileBehavior: OpenRealmBehaviorConfiguration,
@@ -55,6 +66,7 @@ const TasksProvider = ({navigation, children}) => {
 
       Realm.open(config).then(projectRealm => {
         console.log('project realm ', projectRealm);
+        console.log('schema version', realmRef.schemaVersion);
         realmRef.current = projectRealm;
         const syncTasks = projectRealm.objects('Task');
         const longRunningTasks = syncTasks.filtered('counter >= 1');
@@ -97,11 +109,26 @@ const TasksProvider = ({navigation, children}) => {
   const createTask = newTaskName => {
     const projectRealm = realmRef.current;
     if (projectRealm) {
-      const subTaskRefObj = {
+      const subTaskRefObj1 = {
         _id: new ObjectId(),
-        name: 'Shubham',
-        subcounter: 'yup',
+        name: 'Abuzar 1',
+        subcounter: '12',
+        city: 'Pragyaraj',
       };
+
+      const subTaskRefObj2 = {
+        _id: new ObjectId(),
+        name: 'Apoorva',
+        subcounter: '13',
+        city: 'Pragyaraj',
+      };
+
+      const address = {
+        country: 'India',
+        district: 'Noida',
+        pincode: '282005',
+      };
+
       projectRealm.write(() => {
         // create a contact object
         projectRealm.create('Task', {
@@ -109,7 +136,9 @@ const TasksProvider = ({navigation, children}) => {
           name: newTaskName || 'New Task',
           status: 'Open',
           counter: 1,
-          subTaskRef: [subTaskRefObj], // embed the address in the contact object
+          city: 'Agra',
+          subTaskRef: [subTaskRefObj1, subTaskRefObj2],
+          address: address, // embed the address in the contact object
         });
       });
     }
