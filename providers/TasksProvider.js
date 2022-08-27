@@ -8,11 +8,14 @@ import {EditTask} from '../components/EditTask';
 import {Overlay} from 'react-native-elements';
 import {SubTaskView} from '../views/SubTaskView';
 import {EditSubTask} from '../components/EditSubTask';
+import {RestaurantDeviceSchema} from './RestaurantDeviceSchema';
 
 const TasksContext = React.createContext(null);
 
 const TasksProvider = ({navigation, children}) => {
   const [tasks, setTasks] = useState([]);
+  const [restObj, setRestObj] = useState([]);
+
   const [updatedTask, setUpdatedTask] = useState();
   const [subTaskIndexToUpdate, setSubTaskIndexToUpdate] = useState();
   const [subTaskInitalVal, setsubTaskInitalVal] = useState('');
@@ -21,7 +24,41 @@ const TasksProvider = ({navigation, children}) => {
   const [overlayVisibleForSubTask, setOverlayVisibleForSubTask] =
     useState(false);
   const {user} = useAuth();
+  const OpenRealmBehaviorConfiguration = {
+    type: 'openImmediately',
+  };
+  const config = {
+    schema: [Task, SubTaskRef, Address, RestaurantDeviceSchema],
+    schemaVersion: 29,
 
+    sync: {
+      user: user,
+      // clientReset: {
+      //   mode: 'discardLocal',
+      //   clientResetBefore: realm => {
+      //     console.log('Beginning client reset for ', realm.path);
+      //   },
+      //   clientResetAfter: (beforeRealm, afterRealm) => {
+      //     console.log('Finished client reset for', beforeRealm.path);
+      //     console.log('New realm path', afterRealm.path);
+      //   },
+      // },
+      flexible: true,
+      initialSubscriptions: {
+        update: (subs, realm) => {
+          subs.add(realm.objects(Task.name).filtered('counter >= 1'));
+          subs.append(
+            realm
+              .objects(RestaurantDeviceSchema.name)
+              .filtered("uid == '9094BD3D-4E8F-43F9-8BDB-86BD911129F7'"),
+          );
+          // subs.add(realm.objects(RestaurantDeviceSchema.name));
+        },
+      },
+      newRealmFileBehavior: OpenRealmBehaviorConfiguration,
+      existingRealmFileBehavior: OpenRealmBehaviorConfiguration,
+    },
+  };
   // Use a Ref to store the realm rather than the state because it is not
   // directly rendered, so updating it should not trigger a re-render as using
   // state would.
@@ -31,43 +68,15 @@ const TasksProvider = ({navigation, children}) => {
   useEffect(() => {
     // Enables offline-first: opens a local realm immediately without waiting
     // for the download of a synchronized realm to be completed.
-    const OpenRealmBehaviorConfiguration = {
-      type: 'openImmediately',
-    };
+
     try {
-      const config = {
-        schema: [Task, SubTaskRef, Address],
-        schemaVersion: 24,
-
-        sync: {
-          user: user,
-          clientReset: {
-            mode: 'discardLocal',
-            clientResetBefore: realm => {
-              console.log('Beginning client reset for ', realm.path);
-            },
-            clientResetAfter: (beforeRealm, afterRealm) => {
-              console.log('Finished client reset for', beforeRealm.path);
-              console.log('New realm path', afterRealm.path);
-            },
-          },
-          flexible: true,
-          initialSubscriptions: {
-            update: (subs, realm) => {
-              subs.add(realm.objects(Task.name));
-            },
-          },
-          newRealmFileBehavior: OpenRealmBehaviorConfiguration,
-          existingRealmFileBehavior: OpenRealmBehaviorConfiguration,
-        },
-      };
-
       // open a realm for this particular project
 
       Realm.open(config).then(projectRealm => {
         console.log('project realm ', projectRealm);
-        console.log('schema version', realmRef.schemaVersion);
         realmRef.current = projectRealm;
+        console.log('schema version', projectRealm.schemaVersion);
+        console.log('flexible subs', projectRealm.subscriptions);
         const syncTasks = projectRealm.objects('Task');
         const longRunningTasks = syncTasks.filtered('counter >= 1');
         let sortedTasks = longRunningTasks.sorted('name');
@@ -83,6 +92,19 @@ const TasksProvider = ({navigation, children}) => {
         sortedTasks.addListener(() => {
           setTasks([...sortedTasks]);
         });
+        // projectRealm.subscriptions.update(mutableSubs => {
+        //   mutableSubs.add(
+        //     realm
+        //       .objects(RestaurantDeviceSchema.name)
+        //       .filtered("platform == 'ios"),
+        //     {
+        //       name: 'restaurantDeviceSubscription',
+        //     },
+        //   );
+        // });
+        addSubscAndCreateNewRestaurantObjects();
+
+        // createRestaurantDeviceObject();
       });
     } catch (error) {
       console.log('realm opening error', error);
@@ -106,6 +128,59 @@ const TasksProvider = ({navigation, children}) => {
     };
   }, [user]);
 
+  async function addSubscAndCreateNewRestaurantObjects() {
+    // const realm = await Realm.open(config);
+    // console.log(realm.subscriptions);
+    // realm.subscriptions.update(mutableSubs => {
+    //   mutableSubs.add(
+    //     realm.objects(RestaurantDeviceSchema.name).filtered("platform == 'ios"),
+    //     {
+    //       name: 'restaurantDeviceSubscription',
+    //     },
+    //   );
+    // });
+
+    // Realm.open(config).then(projectRealm => {
+    const projectRealm = realmRef.current;
+    const restaurant_device_obj = projectRealm.objects(
+      RestaurantDeviceSchema.name,
+    );
+    const filteredObjects = restaurant_device_obj.filtered(
+      "uid == '9094BD3D-4E8F-43F9-8BDB-86BD911129F7'",
+    );
+    console.log('restuarant_device_length', filteredObjects.length);
+    filteredObjects.forEach(task => {
+      console.log('id : ', task.restaurant_id);
+      console.log('platform :', task.platform);
+      console.log('device_model :', task.device_model);
+      console.log('uid :', task.uid);
+      console.log('*****************');
+    });
+    filteredObjects.addListener(() => {
+      setRestObj([...filteredObjects]);
+    });
+    // });
+
+    createRestaurantDeviceObject();
+  }
+  const createRestaurantDeviceObject = () => {
+    const projectRealm = realmRef.current;
+    if (projectRealm) {
+      projectRealm.write(() => {
+        // create a contact object
+        projectRealm.create(RestaurantDeviceSchema.name, {
+          _id: new ObjectId(),
+          restaurant_id: 'b60c85240977478a8dac3f00e813da58',
+          platform: 'ios',
+          app_version: '1.43.4',
+          device_model: 'ipad',
+          uid: '9094BD3D-4E8F-43F9-8BDB-86BD911129F7',
+          created_at: new Date(),
+          platform_version: '15.6.1',
+        });
+      });
+    }
+  };
   const createTask = newTaskName => {
     const projectRealm = realmRef.current;
     if (projectRealm) {
