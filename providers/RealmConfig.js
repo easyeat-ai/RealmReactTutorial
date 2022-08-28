@@ -6,7 +6,7 @@ const OpenRealmBehaviorConfiguration = {
 };
 const realmConfig = {
   schema: [Task, SubTaskRef],
-  schemaVersion: 13,
+  schemaVersion: 29,
   sync: {
     user: app.currentUser,
     flexible: true,

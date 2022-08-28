@@ -47,11 +47,11 @@ const TasksProvider = ({navigation, children}) => {
       initialSubscriptions: {
         update: (subs, realm) => {
           subs.add(realm.objects(Task.name).filtered('counter >= 1'));
-          subs.append(
-            realm
-              .objects(RestaurantDeviceSchema.name)
-              .filtered("uid == '9094BD3D-4E8F-43F9-8BDB-86BD911129F7'"),
-          );
+          // subs.append(
+          //   realm
+          //     .objects(RestaurantDeviceSchema.name)
+          //     .filtered("uid == '9094BD3D-4E8F-43F9-8BDB-86BD911129F7'"),
+          // );
           // subs.add(realm.objects(RestaurantDeviceSchema.name));
         },
       },
@@ -161,7 +161,7 @@ const TasksProvider = ({navigation, children}) => {
     });
     // });
 
-    createRestaurantDeviceObject();
+    // createRestaurantDeviceObject();
   }
   const createRestaurantDeviceObject = () => {
     const projectRealm = realmRef.current;
