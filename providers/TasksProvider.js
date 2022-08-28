@@ -47,12 +47,7 @@ const TasksProvider = ({navigation, children}) => {
       initialSubscriptions: {
         update: (subs, realm) => {
           subs.add(realm.objects(Task.name).filtered('counter >= 1'));
-          // subs.append(
-          //   realm
-          //     .objects(RestaurantDeviceSchema.name)
-          //     .filtered("uid == '9094BD3D-4E8F-43F9-8BDB-86BD911129F7'"),
-          // );
-          // subs.add(realm.objects(RestaurantDeviceSchema.name));
+          subs.add(realm.objects(RestaurantDeviceSchema.name));
         },
       },
       newRealmFileBehavior: OpenRealmBehaviorConfiguration,
@@ -129,25 +124,13 @@ const TasksProvider = ({navigation, children}) => {
   }, [user]);
 
   async function addSubscAndCreateNewRestaurantObjects() {
-    // const realm = await Realm.open(config);
-    // console.log(realm.subscriptions);
-    // realm.subscriptions.update(mutableSubs => {
-    //   mutableSubs.add(
-    //     realm.objects(RestaurantDeviceSchema.name).filtered("platform == 'ios"),
-    //     {
-    //       name: 'restaurantDeviceSubscription',
-    //     },
-    //   );
-    // });
-
     // Realm.open(config).then(projectRealm => {
     const projectRealm = realmRef.current;
     const restaurant_device_obj = projectRealm.objects(
       RestaurantDeviceSchema.name,
     );
-    const filteredObjects = restaurant_device_obj.filtered(
-      "uid == '9094BD3D-4E8F-43F9-8BDB-86BD911129F7'",
-    );
+    const filteredObjects = restaurant_device_obj;
+
     console.log('restuarant_device_length', filteredObjects.length);
     filteredObjects.forEach(task => {
       console.log('id : ', task.restaurant_id);
@@ -161,7 +144,7 @@ const TasksProvider = ({navigation, children}) => {
     });
     // });
 
-    // createRestaurantDeviceObject();
+    createRestaurantDeviceObject();
   }
   const createRestaurantDeviceObject = () => {
     const projectRealm = realmRef.current;
