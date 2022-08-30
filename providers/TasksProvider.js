@@ -59,11 +59,6 @@ const TasksProvider = ({navigation, route, children, projectPartition}) => {
         console.log('*****************');
       });
 
-      Realm.App.Sync.setLogLevel(app, 'debug');
-      Realm.App.Sync.setLogger(app, (level, message) =>
-        console.log(`[${level}] ${message}`),
-      );
-
       sortedTasks.addListener(() => {
         setTasks([...sortedTasks]);
       });
@@ -230,7 +225,7 @@ const TasksProvider = ({navigation, route, children, projectPartition}) => {
   // useTasks hook.
   return (
     <>
-      {console.log(Realm.Sync, 'Realm.App.Sync')}
+      {console.log(Realm.App.Sync, 'Realm.App.Sync')}
       <TasksContext.Provider
         value={{
           createTask,
