@@ -15,9 +15,9 @@ const Address = {
   name: 'Address',
   embedded: true,
   properties: {
-    country: 'string',
-    district: 'string',
-    pincode: 'string',
+    country: 'string?',
+    district: 'string?',
+    pincode: 'string?',
   },
 };
 

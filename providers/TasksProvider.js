@@ -29,20 +29,21 @@ const TasksProvider = ({navigation, children}) => {
   };
   const config = {
     schema: [Task, SubTaskRef, Address, RestaurantDeviceSchema],
-    schemaVersion: 29,
+    schemaVersion: 33,
 
     sync: {
       user: user,
-      // clientReset: {
-      //   mode: 'discardLocal',
-      //   clientResetBefore: realm => {
-      //     console.log('Beginning client reset for ', realm.path);
-      //   },
-      //   clientResetAfter: (beforeRealm, afterRealm) => {
-      //     console.log('Finished client reset for', beforeRealm.path);
-      //     console.log('New realm path', afterRealm.path);
-      //   },
-      // },
+      deleteIfMigrationNeeded: true,
+      clientReset: {
+        mode: 'discardLocal',
+        clientResetBefore: realm => {
+          console.log('Beginning client reset for ', realm.path);
+        },
+        clientResetAfter: (beforeRealm, afterRealm) => {
+          console.log('Finished client reset for', beforeRealm.path);
+          console.log('New realm path', afterRealm.path);
+        },
+      },
       flexible: true,
       initialSubscriptions: {
         update: (subs, realm) => {
@@ -102,7 +103,7 @@ const TasksProvider = ({navigation, children}) => {
         // createRestaurantDeviceObject();
       });
     } catch (error) {
-      console.log('realm opening error', error);
+      console.log(`Error opening realm: ${error}`);
     }
     // TODO: Open the project realm with the given configuration and store
     // it in the realmRef. Once opened, fetch the Task objects in the realm,
@@ -156,7 +157,7 @@ const TasksProvider = ({navigation, children}) => {
           restaurant_id: 'b60c85240977478a8dac3f00e813da58',
           platform: 'ios',
           app_version: '1.43.4',
-          device_model: 'ipad',
+          device_model: 'shubham',
           uid: '9094BD3D-4E8F-43F9-8BDB-86BD911129F7',
           created_at: new Date(),
           platform_version: '15.6.1',
@@ -183,7 +184,6 @@ const TasksProvider = ({navigation, children}) => {
 
       const address = {
         country: 'India',
-        district: 'Noida',
         pincode: '282005',
       };
 
